@@ -31,7 +31,7 @@ uint8_t prev_state  = STOPPED;
 /*******************************************************************************
  * Function
  ******************************************************************************/
-static void Sniffer_MsgHandler(container_t *container, msg_t *msg);
+static void Sniffer_MsgHandler(service_t *service, msg_t *msg);
 /******************************************************************************
  * @brief init must be call in project init
  * @param None
@@ -41,7 +41,7 @@ void Sniffer_Init(void)
 {
     revision_t revision = {.unmap = REV};
 
-    Luos_CreateContainer(Sniffer_MsgHandler, SNIFFER_MOD, "sniffer", revision);
+    Luos_CreateService(Sniffer_MsgHandler, SNIFFER_MOD, "sniffer", revision);
     //initialization of driver
     SnifferCom_Init();
     //create streaming channel
@@ -90,12 +90,12 @@ void Sniffer_Loop(void)
 }
 
 /******************************************************************************
- * @brief Msg Handler call back when a msg receive for this container
- * @param Container destination
+ * @brief Msg Handler call back when a msg receive for this service
+ * @param Service destination
  * @param Msg receive
  * @return None
  ******************************************************************************/
-static void Sniffer_MsgHandler(container_t *container, msg_t *msg)
+static void Sniffer_MsgHandler(service_t *service, msg_t *msg)
 {
     uint64_t timestamp;
     //if the sniffer is not started by the user we drop the message

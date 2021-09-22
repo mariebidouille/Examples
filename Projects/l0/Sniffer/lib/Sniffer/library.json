@@ -1,7 +1,7 @@
 {
     "name": "Sniffer",
-    "keywords": "robus,network,microservice,luos,operating system,os,embedded,communication,container,ST",
-    "description": "container that receives and transmits all the messages to the pc",
+    "keywords": "robus,network,microservice,luos,operating system,os,embedded,communication,service,ST",
+    "description": "service that receives and transmits all the messages to the pc",
     "version": "0.1.0",
     "authors": {
         "name": "Luos",
