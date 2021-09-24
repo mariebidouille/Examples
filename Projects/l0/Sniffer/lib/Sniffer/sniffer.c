@@ -10,6 +10,10 @@
 #include <inttypes.h>
 #include "sniffer.h"
 #include "sniffer_com.h"
+#include "timestamp.h"
+
+// avoid using LuosHAL in sniffer app ?
+#include "luos_hal.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -25,9 +29,8 @@
 
 streaming_channel_t Sniffer_StreamChannel;
 msg_t msg;
-uint64_t init_time  = 0;
-uint8_t ts_read_pos = 0;
-uint8_t prev_state  = STOPPED;
+uint64_t init_time = 0;
+uint8_t prev_state = STOPPED;
 /*******************************************************************************
  * Function
  ******************************************************************************/
@@ -63,16 +66,18 @@ void Sniffer_Loop(void)
         SnifferData_SendInit();
         //reinitialize sniffer state to stopped
         Set_Default_Sniffer_State();
+        // set timestamp to stop
+        LuosHAL_StopTimestamp();
         return;
     }
     //Start/Stop/Pause process
     else if (state == STARTED)
     {
-
         //if previously the sniffer was stopped restart the timer
         if (prev_state == STOPPED)
         {
-            init_time = (uint64_t)Luos_GetSystick() * 1000000;
+            LuosHAL_StopTimestamp();
+            LuosHAL_StartTimestamp();
         }
     }
     else
@@ -97,23 +102,24 @@ void Sniffer_Loop(void)
  ******************************************************************************/
 static void Sniffer_MsgHandler(service_t *service, msg_t *msg)
 {
-    uint64_t timestamp;
     //if the sniffer is not started by the user we drop the message
     if (prev_state != STARTED)
     {
-        ts_read_pos = (ts_read_pos < MAX_MSG_NB - 1) ? (ts_read_pos + 1) : 0;
         return;
     }
 
-    uint16_t size;
-
-    timestamp   = ctx.sniffer.timestamp[ts_read_pos] - init_time;
-    ts_read_pos = (ts_read_pos < MAX_MSG_NB - 1) ? (ts_read_pos + 1) : 0;
+    // decode timestamped message if needed
+    uint64_t timestamp = 0;
+    if (Timestamp_IsTimestampMsg(msg))
+    {
+        Timestamp_DecodeMsg(msg, &timestamp);
+    }
 
     //copy message in the streaming channel
     SnifferData_PutMsg(timestamp, msg);
 
     //check if the transmition has already started
+    uint16_t size;
     if (SnifferCom_Pending() == 0)
     {
         //send available streaming data
